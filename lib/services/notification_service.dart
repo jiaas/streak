@@ -34,6 +34,11 @@ class NotificationService {
   static bool takesAmount(Habit habit) =>
       habit.kind == HabitKind.quantitative || habit.effectiveTarget > 1;
 
+  @visibleForTesting
+  static String categoryFor(Habit habit) => habit.kind == HabitKind.negative
+      ? actionSnooze
+      : takesAmount(habit) ? actionAdd : actionDone;
+
   static void Function(String habitId)? onOpenHabit;
 
   String? pendingHabitId;
@@ -63,8 +68,53 @@ class NotificationService {
     tz.setLocalLocation(tz.getLocation(zone.identifier));
 
     const android = AndroidInitializationSettings('ic_stat_notify');
+    final strings = await _strings();
+    final darwin = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestSoundPermission: false,
+      requestBadgePermission: false,
+      notificationCategories: [
+        DarwinNotificationCategory(
+          actionDone,
+          actions: [
+            DarwinNotificationAction.plain(
+              actionDone,
+              strings.notif_action_done,
+            ),
+            DarwinNotificationAction.plain(
+              actionSnooze,
+              strings.notif_action_snooze,
+            ),
+          ],
+        ),
+        DarwinNotificationCategory(
+          actionAdd,
+          actions: [
+            DarwinNotificationAction.text(
+              actionAdd,
+              strings.notif_action_add,
+              buttonTitle: strings.notif_action_add,
+              placeholder: strings.notif_action_add_hint,
+            ),
+            DarwinNotificationAction.plain(
+              actionSnooze,
+              strings.notif_action_snooze,
+            ),
+          ],
+        ),
+        DarwinNotificationCategory(
+          actionSnooze,
+          actions: [
+            DarwinNotificationAction.plain(
+              actionSnooze,
+              strings.notif_action_snooze,
+            ),
+          ],
+        ),
+      ],
+    );
     await _plugin.initialize(
-      const InitializationSettings(android: android),
+      InitializationSettings(android: android, iOS: darwin),
       onDidReceiveNotificationResponse: _handleResponse,
       onDidReceiveBackgroundNotificationResponse: notificationActionEntrypoint,
     );
@@ -281,6 +331,9 @@ class NotificationService {
               cancelNotification: true,
             ),
           ],
+        ),
+        iOS: DarwinNotificationDetails(
+          categoryIdentifier: categoryFor(habit),
         ),
       );
 

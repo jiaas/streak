@@ -26,6 +26,14 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Streak uses the camera so you can take photos for your habit covers.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Streak uses Face ID to lock the app and protect your data.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Streak saves photos you choose so they can be used as habit covers.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Streak uses your photo library so you can pick images for habit covers.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

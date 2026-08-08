@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:streak/app/theme/app_tokens.dart';
 import 'package:streak/core/extensions/date_extensions.dart';
 import 'package:streak/core/i18n/l10n.dart';
+import 'package:streak/core/utils/amount_format.dart';
 import 'package:streak/core/icons/habit_glyph.dart';
 import 'package:streak/core/widgets/app_confirm_dialog.dart';
 import 'package:streak/core/widgets/cover_image.dart';
@@ -15,6 +16,8 @@ import 'package:streak/features/habits/data/quant_progress.dart';
 import 'package:streak/features/habits/state/habits_controller.dart';
 import 'package:streak/features/habits/widgets/frequency_chip.dart';
 import 'package:streak/features/habits/widgets/habit_heatmap.dart';
+import 'package:streak/features/habits/widgets/strength_bar.dart';
+import 'package:streak/features/habits/widgets/unscheduled_day_dialog.dart';
 import 'package:streak/features/habits/widgets/water_cup.dart';
 import 'package:streak/features/settings/state/settings_controller.dart';
 
@@ -163,10 +166,28 @@ class HabitCard extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              _StrengthBar(
-                                value: habit.strength,
-                                color: habit.color,
-                                track: scheme.surfaceContainerHighest,
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: StrengthBar(
+                                      value: habit.strength,
+                                      color: habit.color,
+                                      track: scheme.surfaceContainerHighest,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${habit.consistency}%',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: context.tokens.muted,
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -249,72 +270,17 @@ class _AmountLabel extends StatelessWidget {
     final unit = habit.unitLabel.isEmpty ? '' : ' ${habit.unitLabel}';
     return Flexible(
       child: Text(
-        '·  $count/${habit.perDayTarget}$unit',
+        '·  ${formatAmount(count)}/${formatAmount(habit.perDayTarget)}$unit',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
           color: progress.reachedGoal
-              ? progress.reachedColor(habit.color)
+              ? progress.solidColor(habit.color)
               : context.tokens.muted,
         ),
       ),
-    );
-  }
-}
-
-class _StrengthBar extends StatelessWidget {
-  const _StrengthBar({
-    required this.value,
-    required this.color,
-    required this.track,
-  });
-
-  final double value;
-  final Color color;
-  final Color track;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: Stack(
-            children: [
-              Container(height: 6, color: track),
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: value.clamp(0.0, 1.0)),
-                duration: const Duration(milliseconds: 700),
-                curve: Curves.easeOutCubic,
-                builder: (context, t, _) => Container(
-                  height: 6,
-                  width: constraints.maxWidth * t,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Color.lerp(color, Colors.white, 0.28)!,
-                        color,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(4),
-                    boxShadow: t > 0.02
-                        ? [
-                            BoxShadow(
-                              color: color.withValues(alpha: 0.4),
-                              blurRadius: 5,
-                              offset: const Offset(0, 1),
-                            ),
-                          ]
-                        : null,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
@@ -403,14 +369,19 @@ class _ActionButton extends StatelessWidget {
         final ratio = habit.perDayTarget <= 0
             ? 0.0
             : count / habit.perDayTarget;
-        void addProgress() {
+        Future<void> addProgress() async {
+          final controller = context.read<HabitsController>();
+          final allowed =
+              await confirmUnscheduledDay(context, habit: habit, date: today);
+          if (!allowed) return;
           HapticFeedback.mediumImpact();
-          context.read<HabitsController>().addProgress(
-            habit.id,
-            today,
-            habit.incrementAmount,
-          );
+          await controller.addProgress(habit.id, today, habit.incrementAmount);
         }
+
+        final progress = QuantProgress.of(
+          count: count,
+          target: habit.perDayTarget,
+        );
 
         switch (habit.quantKind) {
           case QuantKind.water:
@@ -420,7 +391,7 @@ class _ActionButton extends StatelessWidget {
             );
           case QuantKind.reading:
             return _BookButton(
-              color: habit.color,
+              color: progress.solidColor(habit.color),
               ratio: ratio.clamp(0.0, 1.0),
               done: doneToday,
               onTap: addProgress,
@@ -428,10 +399,7 @@ class _ActionButton extends StatelessWidget {
           case QuantKind.generic:
             return _QuantityButton(
               color: habit.color,
-              progress: QuantProgress.of(
-                count: count,
-                target: habit.perDayTarget,
-              ),
+              progress: progress,
               done: doneToday,
               circle: circle,
               onTap: addProgress,

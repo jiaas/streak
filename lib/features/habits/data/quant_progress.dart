@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 class QuantProgress {
   const QuantProgress({required this.laps, required this.fraction});
 
-  factory QuantProgress.of({required int count, required int target}) {
+  factory QuantProgress.of({required double count, required double target}) {
     if (target <= 0 || count <= 0) {
       return const QuantProgress(laps: 0, fraction: 0);
     }
-    final laps = count ~/ target;
+    final laps = (count / target).floor();
     return QuantProgress(
       laps: laps,
       fraction: laps == 0 ? count / target : (count % target) / target,
@@ -21,9 +21,13 @@ class QuantProgress {
 
   bool get reachedGoal => laps > 0;
 
+  bool get exceededGoal => laps > 0 && fraction > 0.005;
+
   Color reachedColor(Color base) => shade(base, laps - 1);
 
   Color activeColor(Color base) => shade(base, laps);
+
+  Color solidColor(Color base) => shade(base, exceededGoal ? laps : laps - 1);
 
   static Color shade(Color base, int level) {
     if (level <= 0) return base;

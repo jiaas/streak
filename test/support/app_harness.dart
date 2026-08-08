@@ -53,11 +53,14 @@ Habit testHabit({
   Color color = const Color(0xFF7C5CFF),
   int order = 0,
   HabitKind kind = HabitKind.positive,
-  int perDayTarget = 1,
+  double perDayTarget = 1,
   String unitLabel = '',
   String category = '',
   List<DateTime> done = const [],
   int daysOld = 60,
+  HabitInterval interval = HabitInterval.daily,
+  List<int> scheduleWeekdays = const [],
+  List<int> restDays = const [],
 }) =>
     Habit(
       id: id,
@@ -68,6 +71,9 @@ Habit testHabit({
       perDayTarget: perDayTarget,
       unitLabel: unitLabel,
       category: category,
+      interval: interval,
+      scheduleWeekdays: scheduleWeekdays,
+      restDays: restDays,
       createdAt: AppClock.now().subtract(Duration(days: daysOld)),
       completions: {
         for (final day in done)

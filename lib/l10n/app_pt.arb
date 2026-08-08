@@ -1,6 +1,5 @@
 {
   "@@locale": "pt",
-  "request_feature": "Solicitar um recurso",
   "motiv_almost": "Quase lá! Falta só um pouco",
   "about_story": "Este aplicativo nasceu da frustração com os rastreadores de hábitos disponíveis. A maioria limita quantos hábitos você pode criar, esconde recursos básicos atrás de uma assinatura, rastreia sua atividade ou enche a tela de anúncios. Por isso, decidi criar o Streak: totalmente gratuito, sem anúncios, sem pagamentos e sem rastreamento. Tudo funciona localmente, e seus dados pertencem a você. Código aberto, sem pegadinhas.",
   "about_app": "Sobre este aplicativo",
@@ -163,7 +162,7 @@
       }
     }
   },
-  "dev_handle": "@inlitx",
+  "dev_handle": "@InlitX",
   "support": "Suporte",
   "weekdays": "Dias úteis",
   "data": "Dados",
@@ -180,7 +179,7 @@
   "frequency": "Frequência",
   "import_replace": "Substituir tudo",
   "no_habits_yet": "Nenhum hábito ainda",
-  "made_by": "Feito com ❤️ por @inlitx",
+  "made_by": "Feito com ❤️ por @InlitX",
   "reminder_message_hint": "Deixe em branco para usar uma frase motivacional",
   "delete_habit_body": "Excluir \"{name}\"? Esta ação não pode ser desfeita.",
   "@delete_habit_body": {
@@ -273,7 +272,6 @@
   "overview": "Visão geral",
   "kind_positive": "Normal",
   "repeat_weekly": "Dias específicos",
-  "report_bug": "Relatar um erro",
   "week": "Semana",
   "onb3_body": "Estatísticas detalhadas e uma grade anual mostram exatamente o quanto você evoluiu.",
   "more_icons": "Mais ícones",

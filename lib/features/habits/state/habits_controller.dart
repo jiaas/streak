@@ -62,6 +62,13 @@ class HabitsController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> clearProgress() async {
+    await LocalStore.clearProgress();
+    _habits = LocalStore.readHabits();
+    notifyListeners();
+    await HomeWidgetService.sync(asMap);
+  }
+
   Future<void> create({
     required String name,
     required String icon,
@@ -75,9 +82,9 @@ class HabitsController extends ChangeNotifier {
     required List<Reminder> reminders,
     String coverPath = '',
     HabitKind kind = HabitKind.positive,
-    int perDayTarget = 1,
+    double perDayTarget = 1,
     String unitLabel = '',
-    int incrementAmount = 1,
+    double incrementAmount = 1,
     QuantKind quantKind = QuantKind.generic,
     String bookCoverPath = '',
     List<Substep> substeps = const [],
@@ -138,13 +145,13 @@ class HabitsController extends ChangeNotifier {
     await _apply(habit, CompletionOps.clearRelapse(habit, date));
   }
 
-  Future<void> addProgress(String id, DateTime date, int delta) async {
+  Future<void> addProgress(String id, DateTime date, double delta) async {
     final habit = _habits[id];
     if (habit == null) return;
     await _apply(habit, CompletionOps.addProgress(habit, date, delta), day: date);
   }
 
-  Future<void> setProgress(String id, DateTime date, int value) async {
+  Future<void> setProgress(String id, DateTime date, double value) async {
     final habit = _habits[id];
     if (habit == null) return;
     final current = habit.completions[date.dayKey]?.count ?? 0;
@@ -254,12 +261,18 @@ class HabitsController extends ChangeNotifier {
     final moved = ordered.removeAt(oldIndex);
     ordered.insert(newIndex, moved);
 
-    for (var i = 0; i < ordered.length; i++) {
-      final updated = ordered[i].copyWith(order: i);
-      _habits[updated.id] = updated;
-      await LocalStore.writeHabit(updated);
+    final reordered = [
+      for (var i = 0; i < ordered.length; i++)
+        if (ordered[i].order != i) ordered[i].copyWith(order: i),
+    ];
+    for (final habit in reordered) {
+      _habits[habit.id] = habit;
     }
     notifyListeners();
+
+    for (final habit in reordered) {
+      await LocalStore.writeHabit(habit);
+    }
     await HomeWidgetService.sync(asMap);
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:streak/features/focus/pages/focus_setup_page.dart';
 import 'package:streak/features/habits/data/habit.dart';
@@ -49,6 +50,27 @@ void main() {
       });
     }
   }
+
+  testWidgets('the activity tabs are not cut off', (tester) async {
+    await seed(tester);
+    await pumpScreen(
+      tester,
+      const HabitDetailsPage(habitId: 'a'),
+      textScale: 2,
+    );
+    tester.view.devicePixelRatio = 3;
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Week'),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    for (final label in ['Week', 'Month', 'Year']) {
+      final paragraph = tester.renderObject<RenderParagraph>(find.text(label));
+      expect(paragraph.didExceedMaxLines, isFalse, reason: label);
+    }
+  });
 
   testWidgets('the minimal week card keeps the name readable', (tester) async {
     await seed(tester);

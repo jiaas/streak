@@ -325,11 +325,11 @@ class _ClassicPreferencesPage extends StatelessWidget {
             final value = await showNumberKeypadDialog(
               context,
               title: context.l10n.focus_daily_goal,
-              value: settings.focusDailyGoal,
+              value: settings.focusDailyGoal.toDouble(),
               unit: context.l10n.unit_min_short,
               min: 0,
             );
-            if (value != null) settings.setFocusDailyGoal(value);
+            if (value != null) settings.setFocusDailyGoal(value.round());
           },
         ),
         settingsDivider(context),
@@ -403,6 +403,13 @@ class _ClassicDataPage extends StatelessWidget {
         ),
         settingsDivider(context),
         NavRow(
+          icon: LucideIcons.eraser,
+          title: context.l10n.clear_progress,
+          subtitle: context.l10n.clear_progress_sub,
+          onTap: () => SettingsActions.clearProgress(context),
+        ),
+        settingsDivider(context),
+        NavRow(
           icon: LucideIcons.triangleAlert,
           tint: context.tokens.danger,
           title: context.l10n.wipe_data,
@@ -443,14 +450,8 @@ class _ClassicSupportPage extends StatelessWidget {
         ),
         settingsDivider(context),
         LinkRow(
-          icon: LucideIcons.bug,
-          title: context.l10n.report_bug,
-          onTap: () => SettingsActions.openUrl(context, kIssuesUrl),
-        ),
-        settingsDivider(context),
-        LinkRow(
-          icon: LucideIcons.lightbulb,
-          title: context.l10n.request_feature,
+          icon: LucideIcons.messageSquare,
+          title: context.l10n.report_issue,
           onTap: () => SettingsActions.openUrl(context, '$kIssuesUrl/new'),
         ),
       ],

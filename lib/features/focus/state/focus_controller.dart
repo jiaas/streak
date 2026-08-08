@@ -66,6 +66,13 @@ class FocusController extends ChangeNotifier {
     _sessions = LocalStore.readFocusSessions();
     notifyListeners();
   }
+
+  Future<void> removeSessions(Set<String> ids) async {
+    if (ids.isEmpty) return;
+    await LocalStore.removeFocusSessions(ids);
+    _sessions = _sessions.where((s) => !ids.contains(s.id)).toList();
+    notifyListeners();
+  }
   List<FocusTask> get tasks => List.unmodifiable(_tasks);
   int get pendingTasks => _tasks.where((t) => !t.done).length;
 
@@ -254,9 +261,14 @@ class FocusController extends ChangeNotifier {
       .where((s) => s.startedAt.dayKey == day.dayKey)
       .fold(0, (sum, session) => sum + session.seconds);
 
-  int secondsForHabitOnDay(String habitId, DateTime day) => _sessions
-      .where((s) => s.habitId == habitId && s.startedAt.dayKey == day.dayKey)
-      .fold(0, (sum, session) => sum + session.seconds);
+  List<FocusSession> sessionsForHabitOnDay(String habitId, DateTime day) =>
+      _sessions
+          .where((s) => s.habitId == habitId && s.startedAt.dayKey == day.dayKey)
+          .toList();
+
+  int secondsForHabitOnDay(String habitId, DateTime day) =>
+      sessionsForHabitOnDay(habitId, day)
+          .fold(0, (sum, session) => sum + session.seconds);
 
   Future<void> removeForHabit(String habitId) async {
     _sessions.removeWhere((s) => s.habitId == habitId);

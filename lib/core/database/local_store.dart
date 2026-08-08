@@ -40,6 +40,12 @@ class LocalStore {
   static Future<void> writeFocusSession(FocusSession session) =>
       _focus.put(session.id, session.toMap());
 
+  static Future<void> removeFocusSessions(Iterable<String> ids) async {
+    for (final id in ids) {
+      await _focus.delete(id);
+    }
+  }
+
   static Future<void> removeFocusFor(String habitId) async {
     final ids = readFocusSessions()
         .where((s) => s.habitId == habitId)
@@ -122,6 +128,14 @@ class LocalStore {
 
   static Future<void> writeSetting(String key, Object value) =>
       _settings.put(key, value);
+
+  static Future<void> clearProgress() async {
+    for (final habit in readHabits().values) {
+      await writeHabit(habit.copyWith(completions: const {}));
+    }
+    await _notes.clear();
+    await _focus.clear();
+  }
 
   static Future<void> wipeEverything() async {
     await _habits.clear();

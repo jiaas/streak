@@ -57,6 +57,8 @@ class Habit {
     this.incrementAmount = 1,
     this.quantKind = QuantKind.generic,
     this.bookCoverPath = '',
+    this.focusMinutes = 25,
+    this.focusBreakMinutes = 0,
     this.substeps = const [],
     this.vacations = const [],
     this.restDays = const [],
@@ -72,7 +74,7 @@ class Habit {
   final Color color;
   final int order;
 
-  final int perDayTarget;
+  final double perDayTarget;
   final Map<String, Completion> completions;
   final HabitInterval interval;
   final int targetFrequency;
@@ -103,10 +105,13 @@ class Habit {
 
   final HabitKind kind;
   final String unitLabel;
-  final int incrementAmount;
+  final double incrementAmount;
   final QuantKind quantKind;
 
   final String bookCoverPath;
+
+  final int focusMinutes;
+  final int focusBreakMinutes;
 
   final List<Substep> substeps;
 
@@ -120,12 +125,15 @@ class Habit {
 
   bool get hasSubsteps => substeps.isNotEmpty;
 
-  int get effectiveTarget => hasSubsteps ? substeps.length : perDayTarget;
+  double get effectiveTarget =>
+      hasSubsteps ? substeps.length.toDouble() : perDayTarget;
 
   bool isRestDay(DateTime date) => restDays.contains(date.weekday);
 
   bool isPausedOn(DateTime date) =>
       isRestDay(date) || vacations.any((v) => v.contains(date));
+
+  bool isOffDay(DateTime date) => !isScheduledOn(date) || isPausedOn(date);
 
   bool get isOnVacation => vacations.any((v) => v.isOngoing);
 
@@ -159,21 +167,7 @@ class Habit {
   bool get isDoneForNow {
     if (kind == HabitKind.negative) return false;
     final now = AppClock.now();
-    switch (interval) {
-      case HabitInterval.daily:
-        return isCompletedOn(now);
-      case HabitInterval.weekly:
-        final start = now.subtract(Duration(days: now.weekday - 1));
-        return _countInRange(start, start.add(const Duration(days: 6))) >=
-            targetFrequency;
-      case HabitInterval.monthly:
-        final start = DateTime(now.year, now.month, 1);
-        final end = DateTime(now.year, now.month + 1, 0);
-        return _countInRange(start, end) >= targetFrequency;
-      case HabitInterval.weekdays:
-      case HabitInterval.everyXDays:
-        return !isScheduledOn(now) || isCompletedOn(now);
-    }
+    return isOffDay(now) || isCompletedOn(now);
   }
 
   double _dayValue(DateTime date) {
@@ -196,19 +190,24 @@ class Habit {
   double _strength() {
     if (completions.isEmpty && kind != HabitKind.negative) return 0;
     final now = AppClock.now().atMidnight;
+    final floor = createdAt.atMidnight;
     const halfLife = 12.0;
     const window = 90;
     var score = 0.0;
     var norm = 0.0;
     for (var i = 0; i < window; i++) {
       final day = now.subtract(Duration(days: i));
-      if (isNeutralOn(day)) continue;
+      if (day.isBefore(floor) || !isScheduledOn(day) || isNeutralOn(day)) {
+        continue;
+      }
       final weight = math.pow(0.5, i / halfLife).toDouble();
       norm += weight;
       score += weight * _dayValue(day);
     }
     return norm == 0 ? 0 : (score / norm).clamp(0.0, 1.0);
   }
+
+  late final int consistency = (strength * 100).round();
 
   int _countInRange(DateTime start, DateTime end) {
     var count = 0;
@@ -433,7 +432,7 @@ class Habit {
     String? description,
     Color? color,
     int? order,
-    int? perDayTarget,
+    double? perDayTarget,
     Map<String, Completion>? completions,
     HabitInterval? interval,
     int? targetFrequency,
@@ -443,9 +442,11 @@ class Habit {
     String? coverPath,
     HabitKind? kind,
     String? unitLabel,
-    int? incrementAmount,
+    double? incrementAmount,
     QuantKind? quantKind,
     String? bookCoverPath,
+    int? focusMinutes,
+    int? focusBreakMinutes,
     List<Substep>? substeps,
     List<VacationPeriod>? vacations,
     List<int>? restDays,
@@ -474,6 +475,8 @@ class Habit {
       incrementAmount: incrementAmount ?? this.incrementAmount,
       quantKind: quantKind ?? this.quantKind,
       bookCoverPath: bookCoverPath ?? this.bookCoverPath,
+      focusMinutes: focusMinutes ?? this.focusMinutes,
+      focusBreakMinutes: focusBreakMinutes ?? this.focusBreakMinutes,
       substeps: substeps ?? this.substeps,
       vacations: vacations ?? this.vacations,
       restDays: restDays ?? this.restDays,
@@ -505,6 +508,8 @@ class Habit {
         'incrementAmount': incrementAmount,
         'quantKind': quantKind.index,
         'bookCoverPath': bookCoverPath,
+        'focusMinutes': focusMinutes,
+        'focusBreakMinutes': focusBreakMinutes,
         'substeps': substeps.map((s) => s.toMap()).toList(),
         'vacations': vacations.map((v) => v.toMap()).toList(),
         'restDays': restDays,
@@ -519,7 +524,8 @@ class Habit {
         description: (map['description'] ?? '') as String,
         color: Color(map['color'] as int),
         order: (map['order'] ?? 0) as int,
-        perDayTarget: (map['numberOfCompletionsPerDay'] ?? 1) as int,
+        perDayTarget:
+            ((map['numberOfCompletionsPerDay'] ?? 1) as num).toDouble(),
         completions: (map['completions'] as Map?)?.map(
               (key, value) => MapEntry(
                 key as String,
@@ -545,9 +551,12 @@ class Habit {
             : null,
         kind: HabitKind.values[(map['kind'] ?? 0) as int],
         unitLabel: (map['unitLabel'] ?? '') as String,
-        incrementAmount: (map['incrementAmount'] ?? 1) as int,
+        incrementAmount: ((map['incrementAmount'] ?? 1) as num).toDouble(),
         quantKind: QuantKind.values[(map['quantKind'] ?? 0) as int],
         bookCoverPath: (map['bookCoverPath'] ?? '') as String,
+        focusMinutes: ((map['focusMinutes'] ?? 25) as num).toInt(),
+        focusBreakMinutes:
+            ((map['focusBreakMinutes'] ?? 0) as num).toInt(),
         substeps: map['substeps'] == null
             ? const []
             : (map['substeps'] as List)

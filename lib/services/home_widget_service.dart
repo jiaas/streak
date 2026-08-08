@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
@@ -30,6 +31,9 @@ class HomeWidgetService {
     AppLocalizations l10n,
     Map<String, Habit> habits,
   ) async {
+    // Home-screen widgets are Android-only (no WidgetKit on iOS).
+    if (!Platform.isAndroid) return;
+
     if (_lastLocale == l10n.localeName) return;
     _lastLocale = l10n.localeName;
     _locale = l10n.localeName;
@@ -90,6 +94,9 @@ class HomeWidgetService {
     Map<String, Habit> habits, {
     bool renderIcons = true,
   }) async {
+    // Home-screen widgets are Android-only (no WidgetKit on iOS).
+    if (!Platform.isAndroid) return;
+
     _pendingSync?.cancel();
     _pendingSync = null;
     try {
@@ -112,6 +119,9 @@ class HomeWidgetService {
     required int opacity,
     required bool border,
   }) async {
+    // Home-screen widgets are Android-only (no WidgetKit on iOS).
+    if (!Platform.isAndroid) return;
+
     try {
       await HomeWidget.saveWidgetData<String>(
         'widget_style',

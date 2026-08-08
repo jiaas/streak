@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
@@ -13,6 +14,10 @@ class WidgetActionService {
   static const _queueKey = 'pending_actions';
 
   static Future<bool> drain(Map<String, Habit> habits) async {
+    // Home-screen widgets are Android-only; home_widget has no App Group on
+    // iOS, so the action queue does not exist there.
+    if (!Platform.isAndroid) return false;
+
     final pending = await _read();
     if (pending.isEmpty) return false;
 

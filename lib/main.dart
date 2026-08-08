@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -45,8 +47,12 @@ Future<void> main() async {
       NotificationService().pendingHabitId = null;
       _openHabit(pending);
     }
-    final launched = await _appChannel.invokeMethod<String>('consumeLaunchHabit');
-    if (launched != null) _openHabit(launched);
+    // Dynamic app icon launch is Android-only (channel has no iOS handler).
+    if (Platform.isAndroid) {
+      final launched =
+          await _appChannel.invokeMethod<String>('consumeLaunchHabit');
+      if (launched != null) _openHabit(launched);
+    }
   });
 
   runApp(
